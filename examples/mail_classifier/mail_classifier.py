@@ -4,8 +4,8 @@ import importlib.resources as pkg
 import pandas as pd
 import yaml
 
-from light_chain.llm.base_model import LlmBaseModel
-from light_chain.llm.llm_tool import tool
+from litchain.llm.base_model import LlmBaseModel
+from litchain.llm.llm_tool import tool
 import fire
 
 def get_metadata():

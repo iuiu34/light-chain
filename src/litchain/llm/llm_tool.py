@@ -1,12 +1,6 @@
 import inspect
 from typing import Callable, List, Tuple
 
-import openai
-
-from .get_secrets import get_secret
-
-openai.api_key = get_secret("OPENAI_API_KEY")
-
 
 def camel_to_kebab(x):
     out = [x[0].lower()]

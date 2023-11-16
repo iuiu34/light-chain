@@ -2,8 +2,8 @@ import importlib.resources as pkg
 
 import fire
 
-from light_chain.llm.autogpt import AutoGPT
-from light_chain.llm.llm_tool import tool
+from litchain.llm.autogpt import AutoGPT
+from litchain.llm.llm_tool import tool
 
 
 def get_tools():

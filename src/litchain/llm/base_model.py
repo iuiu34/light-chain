@@ -3,7 +3,6 @@ import logging
 import sys
 import time
 
-import pandas as pd
 from openai import RateLimitError, OpenAI
 
 from .messages import Messages
@@ -173,15 +172,7 @@ You are an LLM API. Classifiy text with precision and return output in JSON form
     def predict(self, x):
         x_ = x.copy()
         x_.columns = [v.lower() for v in x_.columns]
-        # X_ = X_.rename(columns={'fare_rules_clean': 'fare_rules'})
         prompts = [self.get_prompt(**row) for _, row in x_.iterrows()]
-        print('prompt example')
-        self.prompt = None
-        for prompt in prompts:
-            if pd.notna(prompt):
-                print(prompt)
-                self.prompt = prompt
-                break
         preds = [self.predict_sample(v) for v in prompts]
         return preds
 

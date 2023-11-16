@@ -1,10 +1,8 @@
 import pytest
 
-from light_chain.llm.base_model import LlmBaseModel
+from litchain.llm.llm_tool import camel_to_kebab
 
 
 def test_light_chain():
     with pytest.raises(TypeError):
-        LlmBaseModel()
-
-
+        camel_to_kebab()

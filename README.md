@@ -1,4 +1,4 @@
-# light chain
+# LitChain
 ![](https://img.shields.io/badge/version-v0.0.1-blue.svg)
 ![](https://img.shields.io/badge/python-3.9-blue.svg)
 [![Docs](https://img.shields.io/badge/docs-confluence-013A97)]()
@@ -17,13 +17,16 @@ So we don't want to use it in production.
 
 ## Usage
 ### Main operator
+
 ```python
-from light_chain import LlmBaseModel, tool
+from litchain import LlmBaseModel, tool
+
 
 @tool
 def get_current_weather(location, unit="fahrenheit"):
     """Get the current weather in a given location."""
     [...]
+
 
 model = LlmBaseModel(
     system="GPT assistant",
@@ -52,7 +55,7 @@ List of examples:
 ## Setup
 ### Instalation
 ```sh
-pip install light-chain
+pip install litchain
 ```
 
 or from source

@@ -2,7 +2,7 @@ import json
 
 import fire
 
-from light_chain import LlmBaseModel, tool
+from litchain import LlmBaseModel, tool
 
 
 @tool
