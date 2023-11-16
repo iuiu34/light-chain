@@ -1,0 +1,11 @@
+Given the email, classify it in one of the labels in the solution matrix.
+Keep in mind the scenarito where this label applies.
+If email doesn't belong to any label of the solution matrix, then the label is "others".
+No label outside the solution matrix is allowed, except "others".
+
+
+solution matrix:
+{solution_matrix}
+
+email:
+{{email}}

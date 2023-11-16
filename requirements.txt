@@ -1,0 +1,5 @@
+# Global dependencies of the project
+fire
+openai >= 1.2.4
+
+# llm dependencies

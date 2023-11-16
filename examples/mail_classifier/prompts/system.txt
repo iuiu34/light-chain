@@ -1,0 +1,1 @@
+GPT api, apply logic with precision.

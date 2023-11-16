@@ -1,0 +1,93 @@
+SHOE_VERIFIED:
+  category: SHOE
+  status: Official
+  scenario: "Verification of shoes to determine if they are Air Jordan, Air Max, or another brand"
+  scope: |
+    BEFORE purchase
+    AFTER purchase
+    Applies to Basketball shoes, Running shoes & Casual footwear
+  original_template: |
+    We're happy to let you know that the shoes you've ordered with reference number ***ORDER ID*** have been verified.
+
+    The details of your Air Jordan, Air Max, or other brand shoes will be shipped to you within the estimated delivery time. The exact time may vary depending on the courier and location.
+
+    If there are any discrepancies in the order or if you have specific preferences, please reach out to our customer support team.
+
+    Thank you for choosing %%RETAILER%%, and we hope you enjoy your stylish footwear.
+  template: |
+    We're pleased to inform you that the shoes you've ordered with reference number {order_id} have been verified.
+
+    The details of your Air Jordan, Air Max, or other brand shoes will be shipped to you within the estimated delivery time. The exact time may vary depending on the courier and location.
+
+    If there are any discrepancies in the order or if you have specific preferences, please reach out to our customer support team.
+
+    Thank you for choosing %%RETAILER%%, and we hope you step out in style with your new footwear.
+  arguments:
+    - order_id
+
+SHOE_REJECTED:
+  category: SHOE
+  status: Official
+  scenario: "(error) The shoes have been rejected due to quality issues (no matter what are the T&C of the purchase)"
+  scope: |
+    BEFORE purchase
+    AFTER purchase
+    Applies to Basketball shoes, Running shoes & Casual footwear
+  original_template: |
+    Thank you for contacting us.
+
+    Based on the type of shoes you ordered, ***BRAND(S) NAME(S)*** >>CHOOSE: are / is >> responsible for the decision and any applicable refund.
+
+    In regard to your recent inquiry about the rejected shoes, we have inspected ***BRAND(S) NAME(S)*** on your behalf, and unfortunately, they have rejected your request, citing the following reason:
+    ***STATE REASON (E.G.: Quality issues.)***
+    We will do our best to provide any assistance to help resolve any other concerns you may have.
+
+    Should you need to contact us on any other matter, please visit our ***BRAND*** Help Centre. ***LINK "Help Centre" TO HC ACCORDING BRAND & MARKET***
+  template: |
+    Thank you for reaching out to us.
+
+    Based on the type of shoes you ordered, {brand_name} >>CHOOSE: are / is >> responsible for the decision and any applicable refund.
+
+    In relation to your recent inquiry about the rejected shoes, we have inspected {brand_name} on your behalf, and unfortunately, they have denied your request, citing the following reason: {state_reason}
+
+    We will make every effort to assist you with any other concerns you may have.
+
+    For inquiries on different matters, please visit our %%RETAILER%% Help Centre:
+
+    Help Centre → %%HC BUTTON%%
+  arguments:
+    - brand_name
+    - state_reason
+
+SHOE_PENDING_VERIFICATION:
+  category: SHOE
+  status: Official
+  scenario: "The shoe order correctly submitted but it's still pending verification from the brand outside the estimated time)"
+  scope: |
+    BEFORE purchase
+    AFTER purchase
+    Applies to Basketball shoes, Running shoes & Casual footwear
+  original_template: |
+    Thank you for your inquiry about the status of your shoe order in relation to ***ORDER ID***.
+
+    Your order was submitted to ***BRAND NAME*** on ***ORDER SUBMISSION DATE: DD/MM/YYYY*** and is currently still in progress.
+
+    ***BRAND NAME*** is taking longer than average to verify your order. We have contacted them on your behalf to ensure your order is processed as soon as possible. Please accept our apologies for the delay, and be assured that we are continuing to follow up on your order verification.
+
+    Once we have further information, we'll send you an email to update you on your order status.
+
+    You can easily track the status of your shoe order in the MyOrders section of your account.
+  template: |
+    Thank you for your inquiry about the status of your shoe order in relation to {order_id}.
+
+    Your order was submitted to {brand_name} on {order_submission_date} and is currently still in progress.
+
+    {brand_name} is taking longer than average to verify your order. We have contacted them on your behalf to ensure your order is processed as soon as possible. Please accept our apologies for the delay, and be assured that we are continuing to follow up on your order verification.
+
+    Once we have further information, we'll send you an email to update you on your order status.
+
+    You can easily track the status of your shoe order in the MyOrders section of your account.
+  arguments:
+    - order_submission_date
+    - order_id
+    - brand_name
