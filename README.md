@@ -9,7 +9,7 @@ To simplify function/tool calling. [openai docs](https://platform.openai.com/doc
 
 This repo takes some inspiration from [langchain](https://python.langchain.com/docs/get_started/introduction.html). But does not use it. 
 
-We think that,
+We think that, in [langchain](https://python.langchain.com/docs/get_started/introduction.html),
 it's fast changes make it a good forum to be aware of the most recent advances and methods in llm usage.
 But that is unstable, unnecessary complex, sometimes redundant, and makes you loss control over your code and prompts.
 And that using a simple prompt and an external library is enough for a lot of cases.
