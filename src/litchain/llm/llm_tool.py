@@ -33,17 +33,21 @@ class OpenaiTool:
         included as well.
     """
 
-    def __init__(self, function):
+    def __init__(self, function, dependencies: dict = None):
         description, arg_descriptions = self._parse_python_tool_docstring(function)
-        output = self._parse_python_tool_output(function)
-        if output != 'str':
-            raise ValueError(f'Openai function output must be str. Not {output}')
+        # arg_descriptions = {k:v for k,v in arg_descriptions.items() if k not in dependencies.keys() }
+        # output = self._parse_python_tool_output(function)
+        # if output != 'str':
+        #     raise ValueError(f'Openai function output must be str. Not {output}')
         self.PYTHON_TO_JSON_TYPES = {
             "str": "string",
             "int": "number",
             "float": "number",
             "bool": "boolean",
         }
+        required = self._get_python_tool_required_args(function)
+        if dependencies:
+            required = [v for v in required if v not in dependencies.keys()]
         self.openai_function = {
             "type": "function",
             "function": {
@@ -52,7 +56,7 @@ class OpenaiTool:
                 "parameters": {
                     "type": "object",
                     "properties": self._get_python_tool_arguments(function, arg_descriptions),
-                    "required": self._get_python_tool_required_args(function)
+                    "required": required
                 }
             }
         }
@@ -141,10 +145,31 @@ class OpenaiTool:
         return inspect.getfullargspec(function).annotations['return'].__name__
 
 
-def tool(function):
-    """Assumes function docs in google style.
-      All function arguments are of primitive types (int, float, str, bool) or
-        Output is str."""
-    openai_tool_ = OpenaiTool(function)
-    function.__tool__ = openai_tool_()
-    return function
+def tool(arg=None):
+    """
+    This function is a decorator that assumes the following:
+
+    Args:
+        function: A function whose arguments are of primitive types (int, float, str, bool).
+
+    Returns:
+        A decorated function. The output of the function is expected to be of type str.
+    """
+    if callable(arg):
+        # Called as @tool without parentheses
+        function = arg
+        openai_tool_ = OpenaiTool(function)
+        function.__tool__ = openai_tool_()
+        function.__tool_dependencies__ = None
+        return function
+    else:
+        # Called as @tool() with parentheses
+        dependencies = arg
+
+        def decorator(function):
+            openai_tool_ = OpenaiTool(function, dependencies)
+            function.__tool__ = openai_tool_()
+            function.__tool_dependencies__ = dependencies
+            return function
+
+        return decorator
