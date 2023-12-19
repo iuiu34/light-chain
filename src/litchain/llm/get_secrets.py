@@ -13,6 +13,7 @@ def get_secret(secret_name: str, prefix: str = None,
 
     if out:
         return out
+
     warnings.warn(
         f"Getting {secret_name} from gcloud secrets.\nDeclaring {secret_name} as an ENV var has faster access.")
 
@@ -24,7 +25,9 @@ def get_secret(secret_name: str, prefix: str = None,
 
     secret_name_ = secret_name.lower().replace('_', '-')
     project = os.environ["PROJECT"]
-    # secret_name_ = f"{prefix}-{secret_name_}"
+    if prefix is not None:
+        prefix_ = prefix.lower().replace('_', '-')
+        secret_name_ = f"{prefix_}-{secret_name_}"
 
     secret_name_ = f'projects/{project}/secrets/{secret_name_}/versions/latest'
     out = secret_client.access_secret_version(request={"name": secret_name_})
@@ -60,9 +63,10 @@ def load_secrets(variables, filename, key):
         os.environ[var] = secrets[var]
 
 
-def get_secrets():
+def get_secrets(variables: list = None):
     key = os.getenv('GENERIC_KEY', '0T35mH3E4-RXW-c6_AgSaa6RM8ik1-T1yR7zKoD71Jw=')
-    variables = ['OPENAI_API_KEY']
+    if variables is None:
+        variables = ['OPENAI_API_KEY']
     filename = 'tmp/secrets.txt'
     # key = os.environ['GENERIC_KEY']
 

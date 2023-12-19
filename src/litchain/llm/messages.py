@@ -11,6 +11,8 @@ class Messages:
         )
 
     def add_system(self, content):
+        self.system = content
+
         messages = [v for v in self.messages if v['role'] != 'system']
         self.messages = [dict(role='system', content=content)
                          ] + messages
@@ -30,7 +32,7 @@ class Messages:
         if type(content) is dict:
             try:
                 content = json.dumps(content)
-            except:
+            except TypeError:
                 pass
 
         self.messages.append(
@@ -52,6 +54,9 @@ class Messages:
 
     def last_content(self, n=-1):
         return self.messages[n]['content']
+
+    def last_role(self, n=-1):
+        return self.messages[n]['role']
 
     def last_tool_name(self):
         for message in self.messages[::-1]:

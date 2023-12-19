@@ -1,11 +1,12 @@
+import inspect
 import json
 import logging
 import os
 import sys
 import time
+from typing import Callable
 
 from joblib import Parallel, delayed
-from openai import RateLimitError, OpenAI
 
 from .messages import Messages
 
@@ -25,8 +26,11 @@ def get_logger(name: str, level=logging.INFO) -> logging.Logger:
 
 
 class LlmBaseModel:
-    def __init__(self, model: str = "gpt-4-1106-preview", max_tokens: int = 1500,
-                 temperature: float = .2, top_p: int = 1,
+    def __init__(self,
+                 model: str = "gpt-4-1106-preview",
+                 max_tokens: int = 1500,
+                 temperature: float = .2,
+                 top_p: int = 1,
                  prompt_template: str = None,
                  system: str = None,
                  tools: list = None,
@@ -35,6 +39,7 @@ class LlmBaseModel:
                  reset_messages: bool = True,
                  verbose: bool = True,
                  ):
+
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
@@ -44,7 +49,6 @@ class LlmBaseModel:
         self.eval_tools = eval_tools
         self.tools = tools
         self.verbose = verbose
-
         logger_level = logging.INFO if verbose else logging.WARNING
         logger_name = self.__class__.__name__
         self.logger = get_logger(logger_name, level=logger_level)
@@ -70,7 +74,7 @@ class LlmBaseModel:
     def get_system_default():
         out = \
             '''
-        ChatGPT API.
+        You are an LLM API.
         '''
         return out
 
@@ -104,23 +108,49 @@ class LlmBaseModel:
     def get_tools_llm(tools):
         return [v.__tool__ for v in tools]
 
+    @staticmethod
+    def _get_python_tool_optional_args(function: Callable) -> dict:
+        """Get the optional arguments for a Python function."""
+        spec = inspect.getfullargspec(function)
+        if spec.defaults is None:
+            return dict()
+
+        optional_args = spec.args[-len(spec.defaults):]
+        out = dict()
+        for n, v in enumerate(optional_args):
+            out[v] = spec.defaults[n]
+        return out
+
     def get_dependencies(self, tool, messages):
         dependencies = tool.__tool_dependencies__
         name = tool.__name__
         previous_tools_response = messages.tools_response()
+        # tool_utils = OpenaiTool(tool)()
+        # required_args = tool_utils['function']['parameters']['required']
+        optional_args = self._get_python_tool_optional_args(tool)
 
         kwargs_ = {}
         for k, v in dependencies.items():
             if type(v) is str:
-                kwargs_[k] = previous_tools_response[v]
+                if k not in optional_args.keys():
+                    kwargs_[k] = previous_tools_response[v]
+                else:
+                    kwargs_[k] = previous_tools_response.get(v, optional_args[k])
+
+
+
             elif type(v) in [list, set] and len(v) == 2:
                 v, w = v
-                kwargs_[k] = previous_tools_response[v][w]
+                if k not in optional_args.keys():
+                    kwargs_[k] = previous_tools_response[v][w]
+                else:
+                    kwargs_[k] = previous_tools_response.get(v, {}).get(w, optional_args[k])
             else:
                 raise ValueError(f"tool {name}. dependencies {k} {v}")
         return kwargs_
 
-    def _eval_tools(self, func_name, tool_call, kwargs, messages):
+    def _eval_tools(self, func_name, tool_call, kwargs, messages,
+                    id=None):
         for tool in self.tools:
             if tool.__name__ == func_name:
                 break
@@ -128,10 +158,12 @@ class LlmBaseModel:
             kwargs_ = self.get_dependencies(tool, messages)
             kwargs.update(kwargs_)
         out = tool(**kwargs)
-        messages.add_tool(out, id=tool_call.id, name=func_name)
+        if id is None:
+            id = tool_call.id
+        messages.add_tool(out, id=id, name=func_name)
         return messages
 
-    def parse_chat_completion_response(self, response, messages):
+    def _parse_message(self, response, messages):
         if response.tool_calls:
             for tool_call in response.tool_calls:
                 func_name = tool_call.function.name
@@ -144,33 +176,39 @@ class LlmBaseModel:
                 # self.logger.info(f'tool call: {func_name}(**{kwargs})')
                 if self.eval_tools:
                     messages = self._eval_tools(func_name, tool_call, kwargs, messages)
+
         else:
             out = response.content
             messages.add_assistant(out)
         return messages
 
-    def predict_sample_gpt(self):
-        pass
+    def _get_chat_response(self, messages):
+        from openai import RateLimitError, OpenAI
 
-    def predict_sample_gemini(self):
-        import vertexai
-        from vertexai.preview import generative_models
-        from vertexai.preview.generative_models import GenerativeModel
+        chat_args = dict(
+            model=self.model,
+            messages=messages(),
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            top_p=self.top_p)
+        if self.tools is not None:
+            chat_args.update(
+                tools=self.tools_llm,
+                tool_choice=self.tool_choice)
 
-        # vertexai.init(project='ds-mkt', location='us-central1')
-        vertexai.init(project=self.project, location=self.location)
-
-        model = GenerativeModel("gemini-pro")
-        get_current_weather_func = None
-        weather_tool = generative_models.Tool(
-            function_declarations=[get_current_weather_func],
-        )
-
-        chat = model.start_chat()
-        model_response = chat.send_message(
-            "What is the weather like in Boston?",
-            tools=[weather_tool])
-        return model_response
+        out = None
+        while out is None:
+            client = OpenAI()
+            try:
+                out = client.chat.completions.create(
+                    **chat_args)
+                out = out.choices[0].message
+                messages = self._parse_message(out, messages)
+            except RateLimitError:
+                self.logger.warning('RateLimitError')
+                self.logger.warning('sleeping for 10 seconds')
+                time.sleep(10)
+        return messages
 
     def predict_sample(self, prompt=None, system=None, messages=None):
         if messages is None:
@@ -184,31 +222,8 @@ class LlmBaseModel:
             prompt_ = prompt.replace('\n', '\\n')
             self.logger.info(f"prompt: {prompt_}")
             messages.add_user(prompt)
-        out = None
-        chat_args = dict(
-            model=self.model,
-            messages=messages(),
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            top_p=self.top_p)
-        if self.tools is not None:
-            chat_args.update(
-                tools=self.tools_llm,
-                tool_choice=self.tool_choice)
         self.logger.info(f'message_history: {messages()}')
-
-        while out is None:
-            client = OpenAI()
-            try:
-                out = client.chat.completions.create(
-                    **chat_args)
-                out = out.choices[0].message
-                messages = self.parse_chat_completion_response(out, messages)
-            except RateLimitError:
-                self.logger.warning('RateLimitError')
-                self.logger.warning('sleeping for 10 seconds')
-                time.sleep(10)
-
+        messages = self._get_chat_response(messages)
         self.logger.info(f'response: {messages.last_content()}')
         return messages
 
@@ -274,3 +289,15 @@ class LlmBaseModel:
         _config.set_option("server.headless", True)
 
         run(tmp_file_path, '', [], [])
+
+
+class GptBaseModel(LlmBaseModel):
+    def __init__(self, model: str = "gpt-4-1106-preview",
+                 **kwargs
+                 ):
+        if not model.startswith('gpt'):
+            raise ValueError(f"model {self.model} not supported")
+        super().__init__(
+            model=model,
+            **kwargs
+        )

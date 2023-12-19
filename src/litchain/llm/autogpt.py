@@ -45,7 +45,8 @@ class AutoGPT(LlmBaseModel):
                          tools=tools,
                          prompt_template=prompt_template,
                          reset_messages=reset_messages,
-                         verbose=verbose)
+                         verbose=verbose
+                         )
 
     @staticmethod
     def get_trigger_default():
